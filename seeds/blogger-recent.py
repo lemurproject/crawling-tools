@@ -19,7 +19,6 @@ import sqlite3
 import datetime
 import xml.etree.cElementTree as ElementTree
 
-import argparse
 import dateutil.parser
 import requests
 
@@ -108,7 +107,11 @@ def discover_urls(conn):
 
 def main():
     logging.BASIC_FORMAT = '%(asctime)-15s %(levelname)s:%(name)s:%(message)s'
-    db_path = 'blogger-urls.sqlite'
+    if len(sys.argv) != 2:
+        print >> sys.stderr, 'Usage: %s db.sqlite' % sys.argv[0]
+        sys.exit(1)
+
+    db_path = sys.argv[1]
     conn = get_db_conn(db_path) 
     n_added = discover_urls(conn)
     logging.info('Added %d blogs', n_added)
