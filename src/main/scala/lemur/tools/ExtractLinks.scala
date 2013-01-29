@@ -11,6 +11,7 @@ import net.htmlparser.jericho.Tag
 import java.io.Reader
 import net.htmlparser.jericho.Config
 import net.htmlparser.jericho.LoggerProvider
+import java.io.InputStream
 
 /**
  * Extracts links in pages stored in WARC files that match a regular expression.
@@ -24,11 +25,7 @@ object ExtractLinks {
     patterns.toArray
   }
 
-  def foo() {
-    //val source = new StreamedSource(cs);
-  }
-
-  def getLinks(data: Reader): Option[Iterator[String]] = {
+  def getLinks(data: InputStream): Option[Iterator[String]] = {
     try {
       val source = new StreamedSource(data)
 
@@ -65,6 +62,22 @@ object ExtractLinks {
     links
   }
 
+  def testFile(warcFile: File) = {
+    printf("Testing file: %s\n", warcFile.toString())
+    val responses = for (
+      rec <- Warc.readResponses(warcFile);
+      (headers, body) = Warc.parseResponse(rec)
+    ) yield body;
+    
+    val allLinks = responses.flatMap(getLinks)
+    
+    var n = 0
+    allLinks.foreach(item => {
+      n += 1
+    })
+    printf("Total links: %s\n", n)
+  }
+  
   def main(args: Array[String]) {
     if (args.length < 2) {
       println("Usage: ExtractLinks regexp-file file1.warc.gz ...");
@@ -80,8 +93,11 @@ object ExtractLinks {
     val patterns = loadRegExps(regexpFile)
 
     warcFiles.foreach(warcFile => {
-      val links = extractLinks(patterns, warcFile)
-      links.foreach(println(_))
+      testFile(warcFile)
+      //val links = extractLinks(patterns, warcFile)
+      //links.foreach(println(_))
+      
+      
     })
   }
 }
