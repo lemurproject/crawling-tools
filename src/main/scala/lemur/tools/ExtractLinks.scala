@@ -61,24 +61,6 @@ object ExtractLinks {
 
     links
   }
-
-  def testFile(warcFile: File) = {
-    printf("Testing file: %s\n", warcFile.toString())
-    val responses = for (
-      rec <- Warc.readResponses(warcFile);
-      (headers, body) = Warc.parseResponse(rec)
-    ) yield body;
-    
-    val allLinks = responses.flatMap(getLinks)
-    
-    var n = 0
-    allLinks.foreach(items => {
-      items.foreach(item => {
-    	  n += 1        
-      })
-    })
-    printf("Total links: %s\n", n)
-  }
   
   def main(args: Array[String]) {
     if (args.length < 2) {
@@ -95,11 +77,8 @@ object ExtractLinks {
     val patterns = loadRegExps(regexpFile)
 
     warcFiles.foreach(warcFile => {
-      testFile(warcFile)
-      //val links = extractLinks(patterns, warcFile)
-      //links.foreach(println(_))
-      
-      
+      val links = extractLinks(patterns, warcFile)
+      links.foreach(println(_))
     })
   }
 }
