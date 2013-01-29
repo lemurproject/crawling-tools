@@ -72,8 +72,10 @@ object ExtractLinks {
     val allLinks = responses.flatMap(getLinks)
     
     var n = 0
-    allLinks.foreach(item => {
-      n += 1
+    allLinks.foreach(items => {
+      items.foreach(item => {
+    	  n += 1        
+      })
     })
     printf("Total links: %s\n", n)
   }
