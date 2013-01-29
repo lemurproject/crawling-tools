@@ -16,66 +16,72 @@ import net.htmlparser.jericho.LoggerProvider
  * Extracts links in pages stored in WARC files that match a regular expression.
  */
 object ExtractLinks {
-  
-	def loadRegExps(path: File) = {
-	  val source = Source.fromFile(path)
-	  val patterns = source.getLines.filter(_.trim().length() > 0).map(Pattern.compile(_))
 
-	  patterns.toArray
-	}
-  
-	def foo() {
-	  //val source = new StreamedSource(cs);
-	}
-	
-	def getLinks(data: Reader) =  {
-		val source = new StreamedSource(data)
+  def loadRegExps(path: File) = {
+    val source = Source.fromFile(path)
+    val patterns = source.getLines.filter(_.trim().length() > 0).map(Pattern.compile(_))
 
-	    val hrefs = for (
-	    	segment <- source.iterator();
-	    	if segment.isInstanceOf[Tag];
-	    	val tag = segment.asInstanceOf[Tag];
-	    	val attrs = tag.parseAttributes();
-	    	if attrs != null;
-	    	val href = attrs.getValue("href")
-	    	if href != null
-	    ) yield href
+    patterns.toArray
+  }
 
-	    hrefs
-	}
-	
-	def extractLinks(patterns: Array[Pattern], warcFile: File) = {
-	  val responses = for (
-	      rec <- Warc.readResponses(warcFile);
-	      (headers, body) = Warc.parseResponse(rec)
-	  ) yield body;
+  def foo() {
+    //val source = new StreamedSource(cs);
+  }
 
-	  val allLinks = responses.map(getLinks)
+  def getLinks(data: Reader): Option[Iterator[String]] = {
+    try {
+      val source = new StreamedSource(data)
 
-	  val links = allLinks.flatten.filter(link => {
-	    patterns.exists(_.matcher(link).matches())
-	  })
+      val hrefs = for (
+        segment <- source.iterator();
+        if segment.isInstanceOf[Tag];
+        val tag = segment.asInstanceOf[Tag];
+        val attrs = tag.parseAttributes();
+        if attrs != null;
+        val href = attrs.getValue("href") if href != null
+      ) yield href
 
-	  links
-	}
-	
-	def main(args: Array[String]) {
-		if (args.length < 2){
-		  println("Usage: ExtractLinks regexp-file file1.warc.gz ...");
-		  System.exit(1)
-		}
+      Some(hrefs)
+    } catch {
+      case e: Exception => {
+        None
+      }
+    }
 
-		//Global settings
-		Config.LoggerProvider = LoggerProvider.DISABLED
-		
-		val regexpFile = new File(args(0))
-		val warcFiles = args.slice(1, args.length).map(new File(_))
+  }
 
-		val patterns = loadRegExps(regexpFile)
-		
-		warcFiles.foreach(warcFile => {
-		  val links = extractLinks(patterns, warcFile)
-		  links.foreach(println(_))
-		})		
-	}
+  def extractLinks(patterns: Array[Pattern], warcFile: File) = {
+    val responses = for (
+      rec <- Warc.readResponses(warcFile);
+      (headers, body) = Warc.parseResponse(rec)
+    ) yield body;
+
+    val allLinks = responses.flatMap(getLinks)
+
+    val links = allLinks.flatten.filter(link => {
+      patterns.exists(_.matcher(link).matches())
+    })
+
+    links
+  }
+
+  def main(args: Array[String]) {
+    if (args.length < 2) {
+      println("Usage: ExtractLinks regexp-file file1.warc.gz ...");
+      System.exit(1)
+    }
+
+    //Global settings
+    Config.LoggerProvider = LoggerProvider.DISABLED
+
+    val regexpFile = new File(args(0))
+    val warcFiles = args.slice(1, args.length).map(new File(_))
+
+    val patterns = loadRegExps(regexpFile)
+
+    warcFiles.foreach(warcFile => {
+      val links = extractLinks(patterns, warcFile)
+      links.foreach(println(_))
+    })
+  }
 }
