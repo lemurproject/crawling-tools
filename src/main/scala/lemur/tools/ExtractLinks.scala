@@ -25,7 +25,7 @@ object ExtractLinks {
     patterns.toArray
   }
 
-  def getLinks(data: InputStream): Option[Iterator[String]] = {
+  def getLinks(data: InputStream): Option[List[String]] = {
     try {
       val source = new StreamedSource(data)
 
@@ -38,7 +38,7 @@ object ExtractLinks {
         val href = attrs.getValue("href") if href != null
       ) yield href
 
-      Some(hrefs)
+      Some(hrefs.toList)
     } catch {
       case e: Exception => {
         None
