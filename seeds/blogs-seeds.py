@@ -42,7 +42,7 @@ def seeds_for_url(url, site):
         return ['%s/%s' % (url, p) for p in patterns]
 
     except Exception as e:
-        logger.debug('Error parsing URL: %s %s' % (line, e))
+        logging.debug('Error parsing URL: %s %s' % (url, e))
         return []
 
 
@@ -86,20 +86,21 @@ def output_heritrix(seeds, outdir, n):
 
     base_seeds = it.islice(seeds, 0, 1000)
     base_fname = pjoin(outdir, 'seeds.txt')
-    base_fp = open(base_fname)
+    base_fp = open(base_fname, 'w+')
     for seed in base_seeds:
         base_fp.write(seed)
         base_fp.write('\n')
     base_fp.close()
 
-    groups_seeds = grouper(seeds, n)
+    groups_seeds = grouper(n, seeds)
     for n, group in enumerate(groups_seeds):
-        group_fname = pjoin(outdir, 'action', 'sites-%s.seeds.gz' % n, 'w+')
-        group_fp = gzip.open(group_fname)
+        group_fname = pjoin(outdir, 'action', 'sites-%s.seeds.gz' % n)
+        group_fp = gzip.open(group_fname, 'w+')
         for seed in group:
             if not seed:
                 continue
             group_fp.write(seed)
+            group_fp.write('\n')
         group_fp.close()
 
 
@@ -107,7 +108,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--heritrix-dir', 
         help='Directory for writing the output as Heritrix seed files.')
-    parser.add_argument('-n', default=100000, 
+    parser.add_argument('-n', default=500000, type=int, 
         help='Number of URLs to be grouped (for Heritrix seed files only)')
     parser.add_argument('-s', '--site', choices=site_patterns.keys(),
         help='Name of the website used to generate the patterns.')
